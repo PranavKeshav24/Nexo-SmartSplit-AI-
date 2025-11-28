@@ -25,19 +25,23 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // CRITICAL FIX: Allow CORS from any origin for maximum compatibility
 // Handle preflight OPTIONS requests explicitly
-app.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
-  res.header("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
-  res.sendStatus(204);
-});
-
-// Apply CORS headers to all responses
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+  );
+
+  // Handle OPTIONS request
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
+    return res.sendStatus(204);
+  }
+
   next();
 });
 
