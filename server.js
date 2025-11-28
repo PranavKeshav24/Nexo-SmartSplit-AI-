@@ -10,7 +10,7 @@ const { Pool } = require("pg"); // PostgreSQL driver
 const dotenv = require("dotenv");
 const bcrypt = require("bcrypt"); // For password hashing
 const jwt = require("jsonwebtoken"); // For session tokens
-const cors = require("cors"); // For frontend communication
+// cors package removed - using manual headers for maximum flexibility
 const crypto = require("crypto"); // Node's built-in secure token generator
 
 // Load environment variables from .env file
@@ -23,38 +23,23 @@ const PORT = process.env.PORT || 4000;
 const SALT_ROUNDS = 10;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// CRITICAL FIX: Robust CORS Configuration for production and development
-const allowedOrigins = [
-  "http://localhost:3000", // Frontend port 1 (Common default)
-  "http://localhost:3001", // Frontend port 2 (Vite dynamic port)
-  "http://localhost:5173", // Frontend port 3 (Vite traditional default)
-];
+// CRITICAL FIX: Allow CORS from any origin for maximum compatibility
+// Handle preflight OPTIONS requests explicitly
+app.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  res.header("Access-Control-Max-Age", "86400"); // Cache preflight for 24 hours
+  res.sendStatus(204);
+});
 
-// Add production frontend URLs from environment variable
-if (process.env.FRONTEND_URL) {
-  const frontendUrls = process.env.FRONTEND_URL.split(",").map((url) =>
-    url.trim()
-  );
-  allowedOrigins.push(...frontendUrls);
-}
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = `The CORS policy for this site does not allow access from Origin ${origin}.`;
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+// Apply CORS headers to all responses
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Accept, Origin");
+  next();
+});
 
 // Middleware: Allows Express to read JSON data from the body of requests
 app.use(express.json());
